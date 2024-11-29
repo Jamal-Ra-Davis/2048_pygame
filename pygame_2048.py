@@ -183,8 +183,52 @@ def reset_board():
     game_array_start = [[None, None, None, None], [None, None, None, None], [None, None, None, None], [None, None, None, None]]   
     return copy.deepcopy(game_array_start)
 
+def draw_block(screen, size, x, y, color, text_color, value):
+    round_radius = size // 5
+    line_thickness = (size // 10) * 0
+    pygame.draw.rect(screen, color, pygame.Rect(x, y, size, size),  line_thickness, round_radius)
+
+    if (value is None):
+        return
+
+    my_font = pygame.font.SysFont('Comic Sans MS', size // 4)
+    text_surface = my_font.render(f'{value}', False, text_color)
+    text_size = text_surface.get_size()
+
+    text_x = (x + size // 2) - (text_size[0] // 2)
+    text_y = (y + size // 2) - (text_size[1] // 2)
+
+    screen.blit(text_surface, (text_x, text_y))
+
+def draw_game_array_screen(screen, game_array, size, spacing, offset):
+    color_map = {
+        None: (180, 180, 180), 
+        2: (201, 255, 191), 
+        4: (201, 255, 191),
+        8: (191, 218, 255),
+        16: (202, 191, 255),
+        32: (246, 191, 255),
+        64: (255, 191, 224),
+        128: (255, 168, 168),
+        256: (255, 225, 199),
+        512: (252, 247, 187),
+        1024: (255, 71, 38),
+        2048: (237, 154, 21),
+        4096: (43, 36, 255),
+    }
+
+    cnt = 0
+    for row in range(4):
+        for col in range(4):
+            x = offset + (col * (size + spacing))
+            y = offset + (row * (size + spacing))
+            value = game_array[row][col]
+            color = color_map[value]
+            draw_block(screen, size, x, y, color, (0, 0, 0), value)
+
 if __name__ == "__main__":
     pygame.init()
+    pygame.font.init()
 
     # Pygame now allows natively to enable key repeat:
     # pygame.key.set_repeat(200, 25)
@@ -226,7 +270,7 @@ if __name__ == "__main__":
     while True:
         # Draw background
         screen.fill((225, 225, 225))
-        
+
         # Process Events
         events = pygame.event.get()        
         # Check if user is exiting or pressed return
@@ -296,6 +340,22 @@ if __name__ == "__main__":
                     print(f"Score = {score}")
                     draw_game_array(game_array)
             
+
+        #draw_block(screen, 120, 0, 0, (0, 255, 128), (255, 255, 255), 2048)
+                    
+        smallest = width
+        if height < smallest:
+            smallest = height
+        offset = 12
+        spacing_ratio = 12
+        game_area = smallest - offset*2
+        block_size = int((spacing_ratio * game_area) / (4 * spacing_ratio + 3))
+        spacing = int(block_size / spacing_ratio)
+
+        draw_game_array_screen(screen, game_array, block_size, spacing, offset)
+        score_font = pygame.font.SysFont('Comic Sans MS', 20)
+        score_surface = score_font.render(f'Score: {score}', False, (0, 0, 0))
+        screen.blit(score_surface, (smallest, offset))
 
 
         pygame.display.update()
