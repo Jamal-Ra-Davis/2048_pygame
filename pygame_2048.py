@@ -200,11 +200,30 @@ def draw_block(screen, size, x, y, color, text_color, value):
 
     screen.blit(text_surface, (text_x, text_y))
 
+def draw_text_box(screen, width, height, x, y, color, text_color, value):
+    min_side = height
+    if min_side > width:
+        min_size = width
+    round_radius = min_side // 5
+    pygame.draw.rect(screen, color, pygame.Rect(x, y, width, height),  0, round_radius)
+
+    if (value is None):
+        return
+
+    my_font = pygame.font.SysFont('Comic Sans MS', width // 7)
+    text_surface = my_font.render(f'{value}', False, text_color)
+    text_size = text_surface.get_size()
+
+    text_x = (x + width // 2) - (text_size[0] // 2)
+    text_y = (y + height // 2) - (text_size[1] // 2)
+
+    screen.blit(text_surface, (text_x, text_y))
+
 def draw_game_array_screen(screen, game_array, size, spacing, offset):
     color_map = {
         None: (180, 180, 180), 
         2: (201, 255, 191), 
-        4: (201, 255, 191),
+        4: (231, 255, 211),
         8: (191, 218, 255),
         16: (202, 191, 255),
         32: (246, 191, 255),
@@ -225,6 +244,23 @@ def draw_game_array_screen(screen, game_array, size, spacing, offset):
             value = game_array[row][col]
             color = color_map[value]
             draw_block(screen, size, x, y, color, (0, 0, 0), value)
+
+def moves_are_available(game_array):
+    for dir in range(SHIFT_DIR_DOWN + 1):
+        ref_game_array = copy.deepcopy(game_array)
+        shift_board(ref_game_array, dir)
+        merge_board(ref_game_array, dir)
+        if (compare_game_array(game_array, ref_game_array) == False):
+            return True
+    return False
+
+def reset_game():
+    game_over = False
+    score = 0
+    game_array_start = [[None, None, None, None], [None, None, None, None], [None, None, None, None], [None, None, None, None]]
+    #game_array_start = [[4, 8, 16, None], [16, 32, 64, 128], [64, 128, 256, 512], [None, 4, 8, None]]
+    game_array = copy.deepcopy(game_array_start)
+    return game_array, score, game_over
 
 if __name__ == "__main__":
     pygame.init()
@@ -250,9 +286,15 @@ if __name__ == "__main__":
 
     # Background objects
 
+    '''
+    game_over = False
     score = 0
     game_array_start = [[None, None, None, None], [None, None, None, None], [None, None, None, None], [None, None, None, None]]
     game_array = copy.deepcopy(game_array_start)
+    '''
+    
+    game_array, score, game_over = reset_game()
+    game_over_timer = 0
 
     for i in range(2):
         row, col = get_open_idx(game_array)
@@ -315,33 +357,24 @@ if __name__ == "__main__":
                     debug = True
                 
                 
-
         if board_shifted or debug:
             if (compare_game_array(game_array, prev_game_array) == False):
-                row, col = get_open_idx(game_array)
-                if row is None:
-                    print("Could not find open idx")
-                    print("Game Over!")
-                    score = 0
-                    game_array = reset_board()
-
-                    for i in range(2):
-                        row, col = get_open_idx(game_array)
-                        if row is None:
-                            print("Error: Could not find open idx")
-                            break
-                        game_array[row][col] = 2
-                        print((row, col))
-                    print(f"Score = {score}")
-                    draw_game_array(game_array)
-                else:
+                game_over = not moves_are_available(game_array)
+                if (not game_over):
+                    row, col = get_open_idx(game_array)
                     print((row, col))
                     game_array[row][col] = 2
-                    print(f"Score = {score}")
-                    draw_game_array(game_array)
-            
-
-        #draw_block(screen, 120, 0, 0, (0, 255, 128), (255, 255, 255), 2048)
+                    game_over = not moves_are_available(game_array)
+                if (game_over):
+                    game_over_timer = pygame.time.get_ticks()
+                    print("Game Over")
+                    
+        if (game_over):
+            delta = pygame.time.get_ticks() - game_over_timer
+            if (delta >= 5000):
+                print("Resetting game state")
+                game_array, score, game_over = reset_game()
+                continue
                     
         smallest = width
         if height < smallest:
@@ -357,6 +390,8 @@ if __name__ == "__main__":
         score_surface = score_font.render(f'Score: {score}', False, (0, 0, 0))
         screen.blit(score_surface, (smallest, offset))
 
+        if (game_over):
+            draw_text_box(screen, 300, 200, width // 2 - 150,  height // 2 - 100, (255, 255, 255), (0, 0, 0), "Game Over")
 
         pygame.display.update()
             
