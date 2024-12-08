@@ -266,6 +266,10 @@ if __name__ == "__main__":
     pygame.init()
     pygame.font.init()
 
+    pygame.mixer.init()
+    pygame.mixer.music.load("Resources\\Blippy_Trance.mp3") 
+    pygame.mixer.music.play(loops=-1)
+
     # Pygame now allows natively to enable key repeat:
     # pygame.key.set_repeat(200, 25)
 
@@ -273,6 +277,7 @@ if __name__ == "__main__":
     size = width, height = 600, 480
     screen = pygame.display.set_mode(size)
     clock = pygame.time.Clock()
+    music_paused = False
 
     # No arguments needed to get started
     #textinput = pygame_textinput.TextInputVisualizer()
@@ -322,6 +327,12 @@ if __name__ == "__main__":
         for event in events:
             if event.type == pygame.QUIT:
                 exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                if music_paused:
+                    pygame.mixer.music.unpause()  
+                else:
+                    pygame.mixer.music.pause()  
+                music_paused = not music_paused
 
             if not block_input:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
